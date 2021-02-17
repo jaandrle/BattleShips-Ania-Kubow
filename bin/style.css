@@ -1,0 +1,71 @@
+:root{
+    --size-board: 400px;
+    --count-squares: 10;/* per width/height → final board: 10×10 board */
+    --size-square: calc( var(--size-board) / var(--count-squares) );
+}
+
+/* boards */
+.grid{
+    width: var(--size-board);
+    height: var(--size-board);
+    display: flex;
+    flex-wrap: wrap;
+    background-color: currentColor;
+}
+.grid:not(.grid-display) div{
+    width: var(--size-square);
+    height: var(--size-square);
+    /* background-color: lightcoral; */
+}
+.container{
+    display: flex;
+    justify-content: space-evenly;
+    margin: 1rem auto;
+}
+.grid-user{
+    color: lightskyblue;
+}
+.grid-computer{
+    color: lightgreen;
+}
+.grid-display{
+    background-color: #dbdb7a;
+    margin: auto;
+    flex-direction: column;
+    /* justify-content: space-around; */
+}
+
+/* ships */
+.ship{
+    height: var(--size-square);
+    width: calc( var(--size-square) * var(--ship-parts, 2) );
+    display: flex;
+    background-color: currentColor;
+}
+[name=destroyer]{
+    --ship-parts: 2;
+    color: orange;
+}
+[name=submarine]{
+    --ship-parts: 3;
+    color: pink;
+}
+[name=cruiser]{
+    --ship-parts: 3;
+    color: purple;
+}
+[name=battleship]{
+    --ship-parts: 4;
+    color: aqua;
+}
+[name=carrier]{
+    --ship-parts: 5;
+    color: green;
+}
+
+.fog div{
+    background-color: rgba(0, 0, 0, .5);
+}
+.fog .uncover{
+    background-color: currentColor;
+}
