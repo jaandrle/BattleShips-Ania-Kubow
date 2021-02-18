@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" dri="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="app.js" charset="utf-8"></script>
+    <link rel="stylesheet" href="style.css">
+    <title>Battle Ships</title>
+</head>
+<body>
+    <div class="container">
+        <div class="grid grid-user"></div>
+        <div class="grid grid-opponent"></div>
+    </div>
+    <div class="hidden-info">
+        <h3 id="whose-go">Your Go</h3>
+        <h3 id="info"></h3>
+        <button id="rotate">Rotate Your Ships</button>
+    </div>
+    <div class="grid-display">
+        <div class="ship" name="destroyer" draggable="true">
+            <div data-id="0"></div>
+            <div data-id="1"></div>
+        </div>
+        <div class="ship" name="submarine" draggable="true">
+            <div data-id="0"></div>
+            <div data-id="1"></div>
+            <div data-id="2"></div>
+        </div>
+        <div class="ship" name="cruiser" draggable="true">
+            <div data-id="0"></div>
+            <div data-id="1"></div>
+            <div data-id="2"></div>
+        </div>
+        <div class="ship" name="battleship" draggable="true">
+            <div data-id="0"></div>
+            <div data-id="1"></div>
+            <div data-id="2"></div>
+            <div data-id="3"></div>
+        </div>
+        <div class="ship" name="carrier" draggable="true">
+            <div data-id="0"></div>
+            <div data-id="1"></div>
+            <div data-id="2"></div>
+            <div data-id="3"></div>
+            <div data-id="4"></div>
+        </div>
+    </div>
+</body>
+</html>
