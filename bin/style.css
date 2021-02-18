@@ -4,6 +4,13 @@
     --size-square: calc( var(--size-board) / var(--count-squares) );
 }
 
+.hidden-info{
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    height: max-content;
+}
+
 /* boards */
 .grid{
     width: var(--size-board);
@@ -12,10 +19,10 @@
     flex-wrap: wrap;
     background-color: currentColor;
 }
-.grid:not(.grid-display) div{
+.grid div{
     width: var(--size-square);
     height: var(--size-square);
-    /* background-color: lightcoral; */
+    transition: background .5s;
 }
 .container{
     display: flex;
@@ -25,22 +32,41 @@
 .grid-user{
     color: lightskyblue;
 }
-.grid-computer{
-    color: lightgreen;
+.grid-user div{
+    background-color: currentColor;
 }
-.grid-display{
-    background-color: #dbdb7a;
-    margin: auto;
-    flex-direction: column;
-    /* justify-content: space-around; */
+.grid-opponent{
+    color: aqua;
 }
 
 /* ships */
-.ship{
-    height: var(--size-square);
-    width: calc( var(--size-square) * var(--ship-parts, 2) );
+.grid-display{
+    background-color: #dbdb7a;
+    margin: auto;
+    min-height: calc( 6 * var(--size-square) );/* = ships num + 1 */
+    min-width: calc( 6 * var(--size-square) );/* = ships num + 1 */
     display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+.ship{
+    --ship-final-size: calc( var(--size-square) * var(--ship-parts, 2) );
+    height: var(--size-square);
+    width: var(--ship-final-size);
     background-color: currentColor;
+    display: flex;
+    flex-wrap: wrap;
+}
+[data-rotated="1"] .ship{
+    height: var(--ship-final-size);
+    width: var(--size-square);
+}
+.ship[data-used="1"]{
+    display: none;
+}
+.ship div{
+    height: var(--size-square);
+    width: var(--size-square);
 }
 [name=destroyer]{
     --ship-parts: 2;
@@ -56,7 +82,7 @@
 }
 [name=battleship]{
     --ship-parts: 4;
-    color: aqua;
+    color: lightgreen;
 }
 [name=carrier]{
     --ship-parts: 5;
@@ -64,7 +90,7 @@
 }
 
 .fog div{
-    background-color: rgba(0, 0, 0, .5);
+    background-color: rgba(0, 0, 0, .25);
 }
 .fog .uncover{
     background-color: currentColor;
