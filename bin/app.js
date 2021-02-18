@@ -21,7 +21,7 @@
         display_info.textContent= "Prepare your fleet!";
         game.onbeforegame.push(()=> display_info.textContent= "Now you can fires to computer!");
 
-        grid_display.addEventListener("mousedown", ({ target })=> target.parentElement.dataset.part= target.dataset.id);
+        grid_display.addEventListener("mousedown", ({ target })=> target.parentElement.dataset.part= target.dataset.id);//propagate exact choosen part of ship
         grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
         grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
         grid_user.addEventListener("drop", function(event){
@@ -40,7 +40,6 @@
             updateGame(game, {
                 player_ships_todo: player_ships_todo-1
             });
-            console.log({ ship_type_name, event, start });
         }, false);
         
         document.addEventListener("fire", /** @param {fire_data} def */({ detail })=> console.dir(detail)); /* jshint devel: true *///gulp.keep.line
