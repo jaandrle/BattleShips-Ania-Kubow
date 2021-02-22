@@ -2,16 +2,22 @@
     const { floor, abs, random }= Math;
     const randomIntegerTill= max=> floor(random()*max);
     /**
+     * @typedef player
+     * @type {object}
+     * @property {string} name Player name
+     * @property {number} loss
+     */
+    /**
      * @typedef game
      * @type {object}
      * @property {"start"|"ready"|"game"|"end"} state Game state
      * @property {number} width Game width/height
      * @property {number} count_squares All squares count (width^2)
      * @property {0|1} player_ships_rotation Horizontal/verical
-     * @property {number} player_ships_todo Players ships remaining to add to grid
      * @property {ship[]} types_ships
      * @property {{ user: HTMLDivElement[], opponent: HTMLDivElement[] }} boards
-     * @property {HTMLDivElement[]} grid_opponent
+     * @property {0|1} current_player_id
+     * @property {player[]} players
      */
     /**
      * @param {ship_coordinates} coordinates
@@ -59,6 +65,15 @@
         current.forEach(i=> board[i].setAttribute("name", name));
     }
     /**
+     * @param {HTMLElement} target
+     * @param {object} detail `detail` key for `CustomEvent`
+     * @param {"start"|"ready"|"fire"|"end"} detail.type
+     * @param {boolean} [detail.loss] For `fire` type
+     */
+    function dispatchGameEvent(target, detail){
+        return target.dispatchEvent(new CustomEvent("game", { detail, bubbles: true }));
+    }
+    /**
      * @type {EventListener}
      * @param {Event} event
      * @this HTMLElement
@@ -66,22 +81,52 @@
      */
     function fireDetection({ target }){
         target.classList.add("uncover");
-        const event= { detail: {
-            player: this.getAttribute("player"),
+        dispatchGameEvent(this, {
+            type: "fire",
             loss: target.hasAttribute("name")
-        }, bubbles: true };
-        this.dispatchEvent(new CustomEvent("fire", event));
+        });
     }
+
 
     /**
      * @param {game} game
      * @param {HTMLElement} grid_opponent
      */
     function registerComputer(game, grid_opponent){
+        grid_opponent.setAttribute("player", "Computer");
+        dispatchGameEvent(grid_opponent, { type: "start" });
         grid_opponent.classList.add("fog");
         game.types_ships.forEach(ship_type=> computersShip(ship_type, game));
-        grid_opponent.setAttribute("player", "Computer");
-        game.onbeforegame.push(()=> grid_opponent.onclick= fireDetection);
+        dispatchGameEvent(grid_opponent, { type: "ready", loss: 0 });
+    }
+
+
+
+    /**
+     * @param {game} game
+     * @param {HTMLElement} grid_user
+     * @param {HTMLDivElement[]} ships
+     */
+    function registerPlayer(game, grid_user, ships){
+        grid_user.setAttribute("player", "Your");
+        dispatchGameEvent(grid_user, { type: "start" });
+        let player_ships_todo= game.types_ships.length;
+        grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
+        grid_user.addEventListener("drop", function(event){
+            const [ ship_type_name, part ]= event.dataTransfer.getData("text/html").split("|");
+            const { player_ships_rotation, boards: { user }, width }= game;
+            const { directions }= game.types_ships.find(({ name })=> name===ship_type_name);
+            const start= parseInt(event.target.dataset.id) - parseInt(part) * ( player_ships_rotation ? width : 1 );
+            const coordinates= directions[player_ships_rotation].map(i=> i+start);
+            
+            if(isOutOfBoard(coordinates, game)) return false;
+            if(coordinates.some(i=> user[i].hasAttribute("name"))) return false;
+    
+            coordinates.forEach(i=> user[i].setAttribute("name", ship_type_name));
+            ships[ship_type_name].dataset.used= 1;
+            player_ships_todo-= 1;
+            if(!player_ships_todo) dispatchGameEvent(grid_user, { type: "ready", loss: 0 });
+        }, false);
     }
     /**
      * In case 3×3 and ship with length of 3 (calculates thanks to `shift`~board width):
@@ -145,7 +190,6 @@
             state: "start",
             width, count_squares,
             player_ships_rotation: 0,
-            player_ships_todo: 5, //ships types
             types_ships: [
                 createShip("destroyer", 2, width),
                 createShip("submarine", 3, width),
@@ -157,7 +201,8 @@
                 user: createBoard(grid_user, count_squares),
                 opponent: createBoard(grid_opponent, count_squares)
             },
-            onbeforegame: []
+            current_player: 0,
+            players: []
         };
     }
 
@@ -167,10 +212,6 @@
      */
     function updateGame(game, new_data){
         Object.assign(game, new_data);
-        if(!game.player_ships_todo){
-            Object.assign(game, { state: "game" });
-            game.onbeforegame.forEach(f=> f());
-        }
     }
 
     /**
@@ -182,6 +223,7 @@
         grid_display.dataset.rotated= player_ships_rotation;
         Object.assign(game, { player_ships_rotation });
     }
+
 
     /**
      * @typedef fire_data
@@ -202,35 +244,49 @@
             grid_user, grid_opponent
         });
         document.body.setAttribute("style", `--count-squares: ${game.width};`);//sync with CSS
-        
-        registerComputer(game, grid_opponent);
-        display_info.textContent= "Prepare your fleet!";
-        game.onbeforegame.push(()=> display_info.textContent= "Now you can fires to computer!");
-    
         grid_display.addEventListener("mousedown", ({ target })=> target.parentElement.dataset.part= target.dataset.id);//propagate exact choosen part of ship
         grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
-        grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
-        grid_user.addEventListener("drop", function(event){
-            const [ ship_type_name, part ]= event.dataTransfer.getData("text/html").split("|");
-            const { player_ships_rotation, player_ships_todo, boards: { user }, width }= game;
-            const { directions }= game.types_ships.find(({ name })=> name===ship_type_name);
-            const start= parseInt(event.target.dataset.id) - parseInt(part) * ( player_ships_rotation ? width : 1 );
-            const coordinates= directions[player_ships_rotation].map(i=> i+start);
-            
-            if(isOutOfBoard(coordinates, game)) return false;
-            if(coordinates.some(i=> user[i].hasAttribute("name"))) return false;
-    
-            coordinates.forEach(i=> user[i].setAttribute("name", ship_type_name));
-            ships[ship_type_name].dataset.used= 1;
-    
-            updateGame(game, {
-                player_ships_todo: player_ships_todo-1
-            });
-        }, false);
-        
-        document.addEventListener("fire", /** @param {fire_data} def */({ detail })=> console.dir(detail)); /* jshint devel: true *///gulp.keep.line
-    
         button_rotate.onclick= ()=> toggleRotation(game, grid_display);
+    
+        document.addEventListener("game", function({ target, detail: { type, loss } }){
+            let { current_player_id, players= [] }= game;
+            let state= "start";
+            switch (type){
+                case "start":
+                    players.push({ name: target.getAttribute("player") });
+                    return updateGame(game, { players });
+                case "ready":
+                    if(game.players.filter(({ name })=> name).length!==2) return requestAnimationFrame(dispatchGameEvent.bind(null, target, { type, loss }));
+                    Object.assign(game.players.find(({ name })=> name===target.getAttribute("player")), { loss });
+                    state= game.players.filter(({ loss })=> loss===0).length===2 ? "game" : "ready";
+                    break;
+                case "fire":
+                    break;
+                default :
+            }
+            current_player_id= current_player_id ? 0 : 1;
+            updateGame(game, { state, current_player_id, players });
+            updateMessages(game);
+        });
+        
+        registerComputer(game, grid_opponent);
+        registerPlayer(game, grid_user, ships);
+    
+        function updateMessages({ state, players, current_player_id }){
+            const { [current_player_id]: current_player }= players;
+            let message= "";
+            switch (state){
+                case "ready":
+                    message= `Prepare your fleet`;
+                    break;
+                case "game":
+                    message= `Fire to your opponent!`;
+                    break;
+                default :
+            }
+            display_turn.textContent= current_player.name+" Go:";
+            display_info.textContent= message;
+        }
     }
     if(document.readyState==="complete") return main();
     return document.addEventListener("DOMContentLoaded", main);

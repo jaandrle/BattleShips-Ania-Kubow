@@ -1,3 +1,4 @@
+gulp_place("../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
 /**
  * @type {EventListener}
  * @param {Event} event
@@ -6,9 +7,8 @@
  */
 function fireDetection({ target }){
     target.classList.add("uncover");
-    const event= { detail: {
-        player: this.getAttribute("player"),
+    dispatchGameEvent(this, {
+        type: "fire",
         loss: target.hasAttribute("name")
-    }, bubbles: true };
-    this.dispatchEvent(new CustomEvent("fire", event));
+    });
 }

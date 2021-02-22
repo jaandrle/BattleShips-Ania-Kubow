@@ -1,8 +1,10 @@
 gulp_place("./registerComputer.sub.js", "file_once");/* global registerComputer */
+gulp_place("./registerPlayer.sub.js", "file_once");/* global registerPlayer */
 gulp_place("./game/createGameConfig.sub.js", "file_once");/* global createGameConfig */
 gulp_place("./game/updateGame.sub.js", "file_once");/* global updateGame */
 gulp_place("./game/toggleRotation.sub.js", "file_once");/* global toggleRotation */
 gulp_place("./board/isOutOfBoard.sub.js", "file_once");/* global isOutOfBoard */
+gulp_place("./dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
 gulp_place("./game/fire_data.type.sub.js", "file_once");
 
 function main(){
@@ -16,33 +18,47 @@ function main(){
         grid_user, grid_opponent
     });
     document.body.setAttribute("style", `--count-squares: ${game.width};`);//sync with CSS
-    
-    registerComputer(game, grid_opponent);
-    display_info.textContent= "Prepare your fleet!";
-    game.onbeforegame.push(()=> display_info.textContent= "Now you can fires to computer!");
-
     grid_display.addEventListener("mousedown", ({ target })=> target.parentElement.dataset.part= target.dataset.id);//propagate exact choosen part of ship
     grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
-    grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
-    grid_user.addEventListener("drop", function(event){
-        const [ ship_type_name, part ]= event.dataTransfer.getData("text/html").split("|");
-        const { player_ships_rotation, player_ships_todo, boards: { user }, width }= game;
-        const { directions }= game.types_ships.find(({ name })=> name===ship_type_name);
-        const start= parseInt(event.target.dataset.id) - parseInt(part) * ( player_ships_rotation ? width : 1 );
-        const coordinates= directions[player_ships_rotation].map(i=> i+start);
-        
-        if(isOutOfBoard(coordinates, game)) return false;
-        if(coordinates.some(i=> user[i].hasAttribute("name"))) return false;
-
-        coordinates.forEach(i=> user[i].setAttribute("name", ship_type_name));
-        ships[ship_type_name].dataset.used= 1;
-
-        updateGame(game, {
-            player_ships_todo: player_ships_todo-1
-        });
-    }, false);
-    
-    document.addEventListener("fire", /** @param {fire_data} def */({ detail })=> console.dir(detail)); /* jshint devel: true *///gulp.keep.line
-
     button_rotate.onclick= ()=> toggleRotation(game, grid_display);
+
+    document.addEventListener("game", function({ target, detail: { type, loss } }){
+        let { current_player_id, players= [] }= game;
+        let state= "start";
+        switch (type){
+            case "start":
+                players.push({ name: target.getAttribute("player") });
+                return updateGame(game, { players });
+            case "ready":
+                if(game.players.filter(({ name })=> name).length!==2) return requestAnimationFrame(dispatchGameEvent.bind(null, target, { type, loss }));
+                Object.assign(game.players.find(({ name })=> name===target.getAttribute("player")), { loss });
+                state= game.players.filter(({ loss })=> loss===0).length===2 ? "game" : "ready";
+                break;
+            case "fire":
+                break;
+            default :
+        }
+        current_player_id= current_player_id ? 0 : 1;
+        updateGame(game, { state, current_player_id, players });
+        updateMessages(game);
+    });
+    
+    registerComputer(game, grid_opponent);
+    registerPlayer(game, grid_user, ships);
+
+    function updateMessages({ state, players, current_player_id }){
+        const { [current_player_id]: current_player }= players;
+        let message= "";
+        switch (state){
+            case "ready":
+                message= `Prepare your fleet`;
+                break;
+            case "game":
+                message= `Fire to your opponent!`;
+                break;
+            default :
+        }
+        display_turn.textContent= current_player.name+" Go:";
+        display_info.textContent= message;
+    }
 }

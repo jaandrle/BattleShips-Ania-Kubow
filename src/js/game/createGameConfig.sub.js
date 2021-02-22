@@ -11,7 +11,6 @@ function createGameConfig({ width, grid_user, grid_opponent }){
         state: "start",
         width, count_squares,
         player_ships_rotation: 0,
-        player_ships_todo: 5, //ships types
         types_ships: [
             createShip("destroyer", 2, width),
             createShip("submarine", 3, width),
@@ -23,6 +22,7 @@ function createGameConfig({ width, grid_user, grid_opponent }){
             user: createBoard(grid_user, count_squares),
             opponent: createBoard(grid_opponent, count_squares)
         },
-        onbeforegame: []
+        current_player: 0,
+        players: []
     };
 }
