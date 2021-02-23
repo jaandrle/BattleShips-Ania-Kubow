@@ -16,7 +16,7 @@
 .grid div{
     width: var(--size-square);
     height: var(--size-square);
-    transition: background .5s;
+    transition: background .5s cubic-bezier(.6,-0.28,.74,.05);
 }
 .container{
     display: flex;
@@ -88,4 +88,21 @@
 }
 .fog .uncover{
     background-color: currentColor;
+}
+.grid div{
+    position: relative;
+}
+.grid div:before{
+    content: "";
+    display: block;
+    width: 50%;
+    height: 50%;
+    top: 25%;
+    left: 25%;
+    border-radius: 100%;
+    position: absolute;
+    transition: background .5s cubic-bezier(.6,-0.28,.74,.05);
+}
+.grid .uncover:before{
+    background-color: black;
 }

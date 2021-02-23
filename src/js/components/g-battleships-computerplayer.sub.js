@@ -15,7 +15,7 @@ window.customElements.define("g-battleships-computerplayer", class extends HTMLE
         if(player&&player!==this.getAttribute("player")) return false;
         switch (type){
             case "start": return registerComputer(game, grid_el, ships);
-            case "message": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click"));
+            case "message": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click", { bubbles: true }));
             default :
         }
     }
