@@ -7,9 +7,7 @@ gulp_place("./game/game.type.sub.js", "file_once");
  * @param {HTMLDivElement[]} ships
  */
 function registerPlayer(game, grid_user, ships){
-    grid_user.setAttribute("player", "Your");
-    dispatchGameEvent(grid_user, { type: "start" });
-    let player_ships_todo= game.types_ships.length;
+    let player_ships_done= 0;
     grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
     grid_user.addEventListener("drop", function(event){
         const [ ship_type_name, part ]= event.dataTransfer.getData("text/html").split("|");
@@ -23,7 +21,7 @@ function registerPlayer(game, grid_user, ships){
 
         coordinates.forEach(i=> user[i].setAttribute("name", ship_type_name));
         ships[ship_type_name].dataset.used= 1;
-        player_ships_todo-= 1;
-        if(!player_ships_todo) dispatchGameEvent(grid_user, { type: "ready", loss: 0 });
+        player_ships_done+= 1;
+        if(player_ships_done===game.types_ships.length) dispatchGameEvent(grid_user, { type: "ready", loss: 0 });
     }, false);
 }

@@ -7,8 +7,6 @@ gulp_place("./game/game.type.sub.js", "file_once");
  * @param {HTMLElement} grid_opponent
  */
 function registerComputer(game, grid_opponent){
-    grid_opponent.setAttribute("player", "Computer");
-    dispatchGameEvent(grid_opponent, { type: "start" });
     grid_opponent.classList.add("fog");
     game.types_ships.forEach(ship_type=> computersShip(ship_type, game));
     dispatchGameEvent(grid_opponent, { type: "ready", loss: 0 });

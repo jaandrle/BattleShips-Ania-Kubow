@@ -1,10 +1,12 @@
 (function BattleShipsModule(){
     const { floor, abs, random }= Math;
     const randomIntegerTill= max=> floor(random()*max);
+
     /**
      * @typedef player
      * @type {object}
      * @property {string} name Player name
+     * @property {string} player Player type
      * @property {number} loss
      */
     /**
@@ -93,12 +95,31 @@
      * @param {HTMLElement} grid_opponent
      */
     function registerComputer(game, grid_opponent){
-        grid_opponent.setAttribute("player", "Computer");
-        dispatchGameEvent(grid_opponent, { type: "start" });
         grid_opponent.classList.add("fog");
         game.types_ships.forEach(ship_type=> computersShip(ship_type, game));
         dispatchGameEvent(grid_opponent, { type: "ready", loss: 0 });
     }
+    
+    window.customElements.define("g-battleships-computerplayer", class extends HTMLElement{
+        connectedCallback(){
+            this.parentElement.addEventListener("game", this);
+            this.parentElement.registerBoard(this);
+        }
+        /**
+         * @param {object} def
+         * @param {object} def.detail
+         * @param {game} def.detail.game
+         */
+        handleEvent({ detail: { type, grid_el, game, ships, player } }){
+            if(player&&player!==this.getAttribute("player")) return false;
+            switch (type){
+                case "start": return registerComputer(game, grid_el, ships);
+                case "message": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click"));
+                default :
+            }
+        }
+        constructor(){ super(); }
+    });
 
 
 
@@ -108,9 +129,7 @@
      * @param {HTMLDivElement[]} ships
      */
     function registerPlayer(game, grid_user, ships){
-        grid_user.setAttribute("player", "Your");
-        dispatchGameEvent(grid_user, { type: "start" });
-        let player_ships_todo= game.types_ships.length;
+        let player_ships_done= 0;
         grid_user.addEventListener("dragover", event=> event.preventDefault(), false);//to `drop` allow
         grid_user.addEventListener("drop", function(event){
             const [ ship_type_name, part ]= event.dataTransfer.getData("text/html").split("|");
@@ -124,9 +143,81 @@
     
             coordinates.forEach(i=> user[i].setAttribute("name", ship_type_name));
             ships[ship_type_name].dataset.used= 1;
-            player_ships_todo-= 1;
-            if(!player_ships_todo) dispatchGameEvent(grid_user, { type: "ready", loss: 0 });
+            player_ships_done+= 1;
+            if(player_ships_done===game.types_ships.length) dispatchGameEvent(grid_user, { type: "ready", loss: 0 });
         }, false);
+    }
+    
+    window.customElements.define("g-battleships-localplayer", class extends HTMLElement{
+        connectedCallback(){
+            this.parentElement.addEventListener("game", this);
+            this.parentElement.registerBoard(this);
+        }
+        handleEvent({ detail: { type, grid_el, game, ships } }){
+            switch (type){
+                case "start": return registerPlayer(game, grid_el, ships);
+                default :
+            }
+        }
+        constructor(){ super(); }
+    });
+    window.customElements.define("g-battleships-ship", class extends HTMLElement{
+        connectedCallback(){
+            const name= this.getAttribute("name");
+            const size= parseInt(this.getAttribute("size"));
+            this.parentElement.registerShip(name, size);
+        }
+        constructor(){ super(); }
+    });
+    window.customElements.define("g-battleships-styles", class extends HTMLElement{
+        connectedCallback(){
+            if(!this.hasAttribute("href")) return this.parentElement.registerStyles({ innerHTML: this.innerHTML });
+            else return this.parentElement.registerStyles({ href: this.getAttribute("href") });
+        }
+        constructor(){ super(); }
+    });
+    const template_id= "g-battleships";
+    /**
+     * @returns {DocumentFragment}
+     */
+    function getBattleShipsTemplate(){
+        let template= document.getElementById(template_id);
+        if(!template){
+            template= Object.assign(document.createElement("template"), {
+                id: template_id,
+                innerHTML: `
+        <div class="container">
+            <div class="grid grid-user"></div>
+            <div class="grid grid-opponent"></div>
+        </div>
+        <div class="hidden-info">
+            <h3 id="whose-go">Your Go</h3>
+            <h3 id="info"></h3>
+            <button id="rotate">Rotate Your Ships</button>
+        </div>
+        <div class="grid-display">
+        </div>
+    `
+            });
+            document.body.appendChild(template);
+        }
+        return template.content.cloneNode(true);
+    }
+    /**
+     * @param {string} tag_name Like `link`, `style`, `div`, …
+     * @param {object|null} def 
+     * @returns {HTMLElement} An elemenet based on `tyg_name`
+     */
+    function createElement(tag_name, def){
+        const el= document.createElement(tag_name);
+        Object.keys(def).forEach(n=> {
+            switch (n){
+                case "name": el.setAttribute(n, def[n]); break;
+                case "dataset": Object.assign(el.dataset, def.dataset); break;
+                default : el[n]= def[n];
+            }
+        });
+        return el;
     }
     /**
      * In case 3×3 and ship with length of 3 (calculates thanks to `shift`~board width):
@@ -190,13 +281,7 @@
             state: "start",
             width, count_squares,
             player_ships_rotation: 0,
-            types_ships: [
-                createShip("destroyer", 2, width),
-                createShip("submarine", 3, width),
-                createShip("cruiser", 3, width),
-                createShip("battleship", 4, width),
-                createShip("carrier", 5, width)
-            ],
+            types_ships: [ ],
             boards: {
                 user: createBoard(grid_user, count_squares),
                 opponent: createBoard(grid_opponent, count_squares)
@@ -206,13 +291,6 @@
         };
     }
 
-    /**
-     * @param {game} game
-     * @param {object} new_data
-     */
-    function updateGame(game, new_data){
-        Object.assign(game, new_data);
-    }
 
     /**
      * @param {game} game
@@ -224,55 +302,76 @@
         Object.assign(game, { player_ships_rotation });
     }
 
-
     /**
-     * @typedef fire_data
-     * @type {object}
-     * @property {object} detail
-     * @property {string} detail.player Player name
-     * @property {boolean} detail.loss `player`s ship uncovered
+     * @param {game} game
+     * @param {object} new_data
      */
+    function updateGame(game, new_data){
+        Object.assign(game, new_data);
+    }
+
+
     
-    function main(){
-        const [ grid_user, grid_opponent, grid_display ]= [ "user", "opponent", "display" ].map(name=> document.getElementsByClassName("grid-"+name)[0]);
-        const ships= document.getElementsByClassName("ship");
-        const button_rotate= document.getElementById("rotate");
-        const [ display_turn, display_info ]= [ "whose-go", "info" ].map(id=> document.getElementById(id));
-        
-        const game= createGameConfig({
-            width: 10,
-            grid_user, grid_opponent
-        });
-        document.body.setAttribute("style", `--count-squares: ${game.width};`);//sync with CSS
-        grid_display.addEventListener("mousedown", ({ target })=> target.parentElement.dataset.part= target.dataset.id);//propagate exact choosen part of ship
-        grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
-        button_rotate.onclick= ()=> toggleRotation(game, grid_display);
-    
-        document.addEventListener("game", function({ target, detail: { type, loss } }){
+    const _private= new WeakMap();
+    window.customElements.define("g-battleships", class extends HTMLElement{
+        log(){
+            console.log(_private.get(this)); /* jshint devel: true *///gulp.keep.line
+        }
+        connectedCallback(){
+            const [ size, squares ]= [ "size", "squares" ].map(n=> this.getAttribute(n));
+            const width= Math.sqrt(squares);
+            const el_this= this.shadowRoot;
+            
+            this.registerStyles({ innerHTML: `:host{ --size-board: ${size}; --size-square: calc( var(--size-board) / ${width} ); }` });
+            el_this.appendChild(getBattleShipsTemplate());
+            const [ grid_user, grid_opponent, grid_display ]= [ "user", "opponent", "display" ].map(name=> el_this.querySelector(".grid-"+name));
+            const button_rotate= el_this.getElementById("rotate");
+            
+            const game= createGameConfig({ width, grid_user, grid_opponent });
+            _private.set(this, game);
+            
+            grid_display.addEventListener("mousedown", ({ target })=> target!==grid_display && (target.parentElement.dataset.part= target.dataset.id));//propagate exact choosen part of ship
+            grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
+            button_rotate.onclick= ()=> toggleRotation(game, grid_display);
+            
+            this.addEventListener("game", this);
+        }
+        handleEvent({ type: event, target, detail: { type, loss } }){
+            if(event!=="game") return false;
+            if(type==="message") return false;
+            /** @type {game} */
+            const game= _private.get(this);
             let { current_player_id, players= [] }= game;
             let state= "start";
             switch (type){
-                case "start":
-                    players.push({ name: target.getAttribute("player") });
-                    return updateGame(game, { players });
+                case "start": return false;
                 case "ready":
-                    if(game.players.filter(({ name })=> name).length!==2) return requestAnimationFrame(dispatchGameEvent.bind(null, target, { type, loss }));
-                    Object.assign(game.players.find(({ name })=> name===target.getAttribute("player")), { loss });
+                    if(game.players.filter(({ name })=> name).length!==2) return setTimeout(dispatchGameEvent, 250, target, { type, loss });
+                    current_player_id= game.players.findIndex(({ name })=> name===target.getAttribute("player"));
+                    Object.assign(game.players[current_player_id], { loss });
                     state= game.players.filter(({ loss })=> loss===0).length===2 ? "game" : "ready";
                     break;
                 case "fire":
+                    state= "game";
                     break;
                 default :
             }
             current_player_id= current_player_id ? 0 : 1;
             updateGame(game, { state, current_player_id, players });
-            updateMessages(game);
-        });
-        
-        registerComputer(game, grid_opponent);
-        registerPlayer(game, grid_user, ships);
-    
-        function updateMessages({ state, players, current_player_id }){
+            this.updateMessages(game);
+            if(state==="game") this.nextRound();
+        }
+        nextRound(){
+            /** @type {game} */
+            const game= _private.get(this);
+            const { current_player_id, players }= game;
+            const { [current_player_id]: current_player, [current_player_id ? 0 : 1]: current_opponent }= players;
+            const el_this= this.shadowRoot;
+            el_this.querySelector(".grid-"+current_player.player).onclick= null;
+            el_this.querySelector(".grid-"+current_opponent.player).onclick= fireDetection;
+            dispatchGameEvent(el_this, { type: "message", player: current_player.player, game });
+        }
+        updateMessages({ state, players, current_player_id }){
             const { [current_player_id]: current_player }= players;
             let message= "";
             switch (state){
@@ -284,10 +383,43 @@
                     break;
                 default :
             }
-            display_turn.textContent= current_player.name+" Go:";
-            display_info.textContent= message;
+            this.shadowRoot.getElementById("whose-go").textContent= current_player.name+" Go:";
+            this.shadowRoot.getElementById("info").textContent= message;
         }
-    }
-    if(document.readyState==="complete") return main();
-    return document.addEventListener("DOMContentLoaded", main);
+        registerStyles({ href, innerHTML }){
+            return this.shadowRoot.appendChild(
+                href ?
+                createElement("link", { rel: "stylesheet", href }) :
+                createElement("style", { innerHTML })
+            );
+        }
+        /**
+         * @param {HTMLElement} el 
+         */
+        registerBoard(el){
+            const [ name, player ]= [ "name", "player" ].map(n=> el.getAttribute(n));
+            /** @type {game} */
+            const game= _private.get(this);
+            const grid_el= this.shadowRoot.querySelector(".grid-"+player);
+            grid_el.setAttribute("player", name);
+            game.players.push({ name, player });
+            dispatchGameEvent(this.shadowRoot, { type: "start", game, ships: this.shadowRoot.querySelector(".grid-display").getElementsByClassName("ship"), grid_el });
+        }
+        /**
+         * @param {string} name Ship name
+         * @param {number} length Ship size
+         */
+        registerShip(name, length){
+            const ship_el= createElement("div", { name, className: "ship", draggable: true });
+            Array.from({ length }).forEach((_, id)=> ship_el.appendChild(createElement("div", { dataset: { id } })));
+            this.shadowRoot.querySelector(".grid-display").appendChild(ship_el);
+    
+            /** @type {game} */
+            const game= _private.get(this);
+            game.types_ships.push(createShip(name, length, game.width));
+        }
+        addEventListener(...args){ return this.shadowRoot.addEventListener(...args); }
+        dispatchEvent(...args){ return this.shadowRoot.dispatchEvent(...args); }
+        constructor(){ super(); this.attachShadow({ mode: "open" }); }
+    });
 })();

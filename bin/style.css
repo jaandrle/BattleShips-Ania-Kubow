@@ -1,9 +1,3 @@
-:root{
-    --size-board: 400px;
-    --count-squares: 10;/* per width/height → final board: 10×10 board */
-    --size-square: calc( var(--size-board) / var(--count-squares) );
-}
-
 .hidden-info{
     display: flex;
     align-items: center;

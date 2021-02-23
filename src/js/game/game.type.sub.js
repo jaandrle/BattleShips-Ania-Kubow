@@ -2,6 +2,7 @@
  * @typedef player
  * @type {object}
  * @property {string} name Player name
+ * @property {string} player Player type
  * @property {number} loss
  */
 /**
