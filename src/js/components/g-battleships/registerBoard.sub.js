@@ -1,11 +1,11 @@
 /* parent *//* global HTMLBattleShipsElement, _private */
 gulp_place("../../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
 /**
- * @param {HTMLElement} el 
+ * @name HTMLBattleShipsElement#registerBoard
+ * @param {BoardInterface} el 
  */
 HTMLBattleShipsElement.prototype.registerBoard= function(el){
     const [ name, player ]= [ "name", "player" ].map(n=> el.getAttribute(n));
-    /** @type {game} */
     const game= _private.get(this);
     const grid_el= this.shadowRoot.querySelector(".grid-"+player);
     grid_el.setAttribute("player", name);

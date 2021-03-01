@@ -10,7 +10,6 @@ HTMLBattleShipsElement.prototype.registerShip= function(name, length){
     Array.from({ length }).forEach((_, id)=> ship_el.appendChild(createElement("div", { dataset: { id } })));
     this.shadowRoot.querySelector(".grid-display").appendChild(ship_el);
 
-    /** @type {game} */
     const game= _private.get(this);
     game.types_ships.push(createShip(name, length, game.width));
 };
