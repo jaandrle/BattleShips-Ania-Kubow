@@ -183,7 +183,11 @@
     class HTMLBattleShipsElement extends HTMLElement{
         addEventListener(...args){ return this.shadowRoot.addEventListener(...args); }
         dispatchEvent(...args){ return this.shadowRoot.dispatchEvent(...args); }
-        constructor(){ super(); this.attachShadow({ mode: "open" }); }
+        constructor(){
+            super();
+            this.attachShadow({ mode: "open" });
+            this.addEventListener("game", this);
+        }
     }
     const template_id= "g-battleships";
     /**
@@ -309,8 +313,6 @@
         grid_display.addEventListener("mousedown", ({ target })=> target!==grid_display && (target.parentElement.dataset.part= target.dataset.id));//propagate exact choosen part of ship
         grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
         button_rotate.onclick= ()=> toggleRotation(game, grid_display);
-        
-        this.addEventListener("game", this);
     };
 
     /**

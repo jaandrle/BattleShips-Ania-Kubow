@@ -18,6 +18,4 @@ HTMLBattleShipsElement.prototype.connectedCallback= function(){
     grid_display.addEventListener("mousedown", ({ target })=> target!==grid_display && (target.parentElement.dataset.part= target.dataset.id));//propagate exact choosen part of ship
     grid_display.addEventListener("dragstart", event=> event.dataTransfer.setData("text/html", event.target.getAttribute("name")+"|"+event.target.dataset.part));
     button_rotate.onclick= ()=> toggleRotation(game, grid_display);
-    
-    this.addEventListener("game", this);
 };
