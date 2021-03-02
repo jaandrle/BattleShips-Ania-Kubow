@@ -3,7 +3,8 @@ gulp_place("../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEve
  * @type {EventListener}
  * @param {Event} event
  * @this HTMLElement
- * @fires fire
+ * @fires game
+ * @listens fire
  */
 function fireDetection({ target }){
     target.classList.add("uncover");

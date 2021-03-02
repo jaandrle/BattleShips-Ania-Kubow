@@ -4,15 +4,15 @@ gulp_place("./BoardInterface.sub.js", "file_once");/* global BoardInterface */
 
 window.customElements.define("g-battleships-computerplayer", class extends BoardInterface{
     /**
-     * @param {object} def
-     * @param {object} def.detail
-     * @param {game} def.detail.game
-     */
+     * @param {GameEvent} def
+     * @listens game
+     * @fires fire
+     * */
     handleEvent({ detail: { type, grid_el, game, ships, current_player_id } }){
-        if(current_player_id&&current_player_id!==this._player_id) return false;
+        if(this._isCurrentPlayer(current_player_id)===0) return false;
         switch (type){
             case "start": return registerComputer(game, grid_el, ships);
-            case "message": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click", { bubbles: true }));
+            case "round-start": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click", { bubbles: true }));
             default :
         }
     }

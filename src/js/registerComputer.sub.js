@@ -5,6 +5,7 @@ gulp_place("./game/game.type.sub.js", "file_once");
 /**
  * @param {game} game
  * @param {HTMLElement} grid_opponent
+ * @fires game
  */
 function registerComputer(game, grid_opponent){
     grid_opponent.classList.add("fog");

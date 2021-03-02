@@ -3,6 +3,8 @@ gulp_place("../../dispatchGameEvent.sub.js", "file_once");/* global dispatchGame
 /**
  * @name HTMLBattleShipsElement#registerBoard
  * @param {BoardInterface} el 
+ * @returns {number} Id registration of player/board
+ * @fires game
  */
 HTMLBattleShipsElement.prototype.registerBoard= function(el){
     const [ name, player ]= [ "name", "player" ].map(n=> el.getAttribute(n));

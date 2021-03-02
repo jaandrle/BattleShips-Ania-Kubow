@@ -5,6 +5,7 @@ gulp_place("./game/game.type.sub.js", "file_once");
  * @param {game} game
  * @param {HTMLElement} grid_user
  * @param {HTMLDivElement[]} ships
+ * @fires game
  */
 function registerPlayer(game, grid_user, ships){
     let player_ships_done= 0;

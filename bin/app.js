@@ -67,10 +67,45 @@
         current.forEach(i=> board[i].setAttribute("name", name));
     }
     /**
+     * @typedef GameEventData
+     * @type {GED_fire|GED_game|GED_roundEnd|GED_roundStart}
+     */
+    /**
+     * @typedef GED_fire
+     * @type {object}
+     * @property {"fire"} type
+     * @property {boolean} loss
+     */
+    /**
+     * @typedef GED_game
+     * @type {object}
+     * @property {"start"|"ready"|"end"} type
+     * @property {HTMLElement} grid_el
+     * @property {game} game
+     * @property {ship[]} ships
+     */
+    /**
+     * @typedef GED_roundStart
+     * @type {object}
+     * @property {"round-start"} type
+     */
+    /**
+     * @typedef GED_roundEnd
+     * @type {object}
+     * @property {"round-end"} type
+     * @property {number} current_player_id
+     * @property {boolean} loss
+     */
+    /**
+     * @typedef GameEvent
+     * @type {object}
+     * @property {HTMLDivElement} target
+     * @property {string} type
+     * @property {GameEventData} detail
+     */
+    /**
      * @param {HTMLElement} target
-     * @param {object} detail `detail` key for `CustomEvent`
-     * @param {"start"|"ready"|"fire"|"end"} detail.type
-     * @param {boolean} [detail.loss] For `fire` type
+     * @param {GameEventData} detail `detail` key for `CustomEvent`
      */
     function dispatchGameEvent(target, detail){
         return target.dispatchEvent(new CustomEvent("game", { detail, bubbles: true }));
@@ -79,7 +114,8 @@
      * @type {EventListener}
      * @param {Event} event
      * @this HTMLElement
-     * @fires fire
+     * @fires game
+     * @listens fire
      */
     function fireDetection({ target }){
         target.classList.add("uncover");
@@ -93,6 +129,7 @@
     /**
      * @param {game} game
      * @param {HTMLElement} grid_opponent
+     * @fires game
      */
     function registerComputer(game, grid_opponent){
         grid_opponent.classList.add("fog");
@@ -101,24 +138,33 @@
     }
     class BoardInterface extends HTMLElement{
         connectedCallback(){
-            this.parentElement.addEventListener("game", this);
+            /** @type {HTMLBattleShipsElement} */
+            const parent= this.parentElement;
+            parent.addEventListener("game", this);
             /** @type {number} IDcko prehravace */
-            this._player_id= this.parentElement.registerBoard(this);
+            this._player_id= parent.registerBoard(this);
+        }
+        /**
+         * @param {number} player_id_candidate
+         * @returns {-1|0|1} Unknown|no|yes
+         * */
+        _isCurrentPlayer(player_id_candidate){
+            return typeof player_id_candidate==="undefined" ? -1 : parseInt(this._player_id===player_id_candidate);
         }
         constructor(){ super(); }
     }
     
     window.customElements.define("g-battleships-computerplayer", class extends BoardInterface{
         /**
-         * @param {object} def
-         * @param {object} def.detail
-         * @param {game} def.detail.game
-         */
+         * @param {GameEvent} def
+         * @listens game
+         * @fires fire
+         * */
         handleEvent({ detail: { type, grid_el, game, ships, current_player_id } }){
-            if(current_player_id&&current_player_id!==this._player_id) return false;
+            if(this._isCurrentPlayer(current_player_id)===0) return false;
             switch (type){
                 case "start": return registerComputer(game, grid_el, ships);
-                case "message": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click", { bubbles: true }));
+                case "round-start": return game.boards.user[randomIntegerTill(game.count_squares)].dispatchEvent(new Event("click", { bubbles: true }));
                 default :
             }
         }
@@ -131,6 +177,7 @@
      * @param {game} game
      * @param {HTMLElement} grid_user
      * @param {HTMLDivElement[]} ships
+     * @fires game
      */
     function registerPlayer(game, grid_user, ships){
         let player_ships_done= 0;
@@ -154,6 +201,10 @@
 
     
     window.customElements.define("g-battleships-localplayer", class extends BoardInterface{
+        /**
+         * @param {GameEventData} def
+         * @listens game
+         */
         handleEvent({ detail: { type, grid_el, game, ships } }){
             switch (type){
                 case "start": return registerPlayer(game, grid_el, ships);
@@ -323,9 +374,15 @@
         Object.assign(game, new_data);
     }
 
+
+    /**
+     * @param {GameEvent} def
+     * @fires game
+     * @listens game
+     * */
     HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, detail: { type, loss } }){
         if(event!=="game") return false;
-        if(type==="message") return false;
+        if(type==="round-start") return false;
         const game= _private.get(this);
         let { current_player_id, players= [] }= game;
         let state= "start";
@@ -339,6 +396,7 @@
                 break;
             case "fire":
                 state= "game";
+                dispatchGameEvent(this.shadowRoot, { type: "round-end", current_player_id, loss, target_id: target });
                 break;
             default :
         }
@@ -352,22 +410,26 @@
     };
 
 
+    /**
+     * @fires game
+     */
     HTMLBattleShipsElement.prototype.nextRound= function(){
         const game= _private.get(this);
         const { current_player_id, players }= game;
-        const { [current_player_id]: current_player, [current_player_id ? 0 : 1]: current_opponent }= players;
         const el_this= this.shadowRoot;
-        el_this.querySelector(".grid-"+current_player.player).onclick= null;
-        el_this.querySelector(".grid-"+current_opponent.player).onclick= fireDetection;
-        dispatchGameEvent(el_this, { type: "message", current_player_id, game });
+        players.forEach(({ player }, i)=>
+            ( el_this.querySelector(".grid-"+player).onclick= current_player_id!==i ? fireDetection : null ));
+        dispatchGameEvent(el_this, { type: "round-start", current_player_id, game });
     };
 
     /**
-     * @param {HTMLElement} el 
+     * @name HTMLBattleShipsElement#registerBoard
+     * @param {BoardInterface} el 
+     * @returns {number} Id registration of player/board
+     * @fires game
      */
     HTMLBattleShipsElement.prototype.registerBoard= function(el){
         const [ name, player ]= [ "name", "player" ].map(n=> el.getAttribute(n));
-        /** @type {game} */
         const game= _private.get(this);
         const grid_el= this.shadowRoot.querySelector(".grid-"+player);
         grid_el.setAttribute("player", name);
@@ -402,7 +464,6 @@
         Array.from({ length }).forEach((_, id)=> ship_el.appendChild(createElement("div", { dataset: { id } })));
         this.shadowRoot.querySelector(".grid-display").appendChild(ship_el);
     
-        /** @type {game} */
         const game= _private.get(this);
         game.types_ships.push(createShip(name, length, game.width));
     };

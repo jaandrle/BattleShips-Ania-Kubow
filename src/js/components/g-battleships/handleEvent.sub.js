@@ -1,9 +1,15 @@
 /* parent *//* global HTMLBattleShipsElement, _private */
 gulp_place("../../game/updateGame.sub.js", "file_once");/* global updateGame */
 gulp_place("../../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
+gulp_place("../../GameEventData.type.sub.js", "file_once");
+/**
+ * @param {GameEvent} def
+ * @fires game
+ * @listens game
+ * */
 HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, detail: { type, loss } }){
     if(event!=="game") return false;
-    if(type==="message") return false;
+    if(type==="round-start") return false;
     const game= _private.get(this);
     let { current_player_id, players= [] }= game;
     let state= "start";
@@ -17,6 +23,7 @@ HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, de
             break;
         case "fire":
             state= "game";
+            dispatchGameEvent(this.shadowRoot, { type: "round-end", current_player_id, loss, target_id: target });
             break;
         default :
     }
