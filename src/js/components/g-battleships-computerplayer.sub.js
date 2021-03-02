@@ -16,5 +16,6 @@ window.customElements.define("g-battleships-computerplayer", class extends Board
             default :
         }
     }
+    
     constructor(){ super(); }
 });

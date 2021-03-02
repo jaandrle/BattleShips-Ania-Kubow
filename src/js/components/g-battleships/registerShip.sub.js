@@ -11,5 +11,6 @@ HTMLBattleShipsElement.prototype.registerShip= function(name, length){
     this.shadowRoot.querySelector(".grid-display").appendChild(ship_el);
 
     const game= _private.get(this);
+    game.max_score+= length;
     game.types_ships.push(createShip(name, length, game.width));
 };

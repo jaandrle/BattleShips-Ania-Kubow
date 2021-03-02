@@ -12,11 +12,13 @@ function createGameConfig({ width, grid_user, grid_opponent }){
         width, count_squares,
         player_ships_rotation: 0,
         types_ships: [ ],
+        results: [ ],
         boards: {
             user: createBoard(grid_user, count_squares),
             opponent: createBoard(grid_opponent, count_squares)
         },
         current_player: 0,
+        max_score: 0,
         players: []
     };
 }

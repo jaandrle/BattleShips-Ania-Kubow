@@ -10,6 +10,6 @@ function fireDetection({ target }){
     target.classList.add("uncover");
     dispatchGameEvent(this, {
         type: "fire",
-        loss: target.hasAttribute("name")
+        loss: target.hasAttribute("name") ? target.getAttribute("name") : false
     });
 }

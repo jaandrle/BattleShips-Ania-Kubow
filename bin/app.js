@@ -1,3 +1,4 @@
+/* jshint maxcomplexity: 15 */
 (function BattleShipsModule(){
     const { floor, abs, random }= Math;
     const randomIntegerTill= max=> floor(random()*max);
@@ -17,8 +18,10 @@
      * @property {number} count_squares All squares count (width^2)
      * @property {0|1} player_ships_rotation Horizontal/verical
      * @property {ship[]} types_ships
+     * @property {results[]} results Array of results per `players` (in the same order) and `types_ships` ⇒ `[ [].length===types_ships.length, … ].length===players.length`
      * @property {{ user: HTMLDivElement[], opponent: HTMLDivElement[] }} boards
      * @property {0|1} current_player_id
+     * @property {number} max_score
      * @property {player[]} players
      */
     /**
@@ -121,7 +124,7 @@
         target.classList.add("uncover");
         dispatchGameEvent(this, {
             type: "fire",
-            loss: target.hasAttribute("name")
+            loss: target.hasAttribute("name") ? target.getAttribute("name") : false
         });
     }
 
@@ -168,6 +171,7 @@
                 default :
             }
         }
+        
         constructor(){ super(); }
     });
 
@@ -330,11 +334,13 @@
             width, count_squares,
             player_ships_rotation: 0,
             types_ships: [ ],
+            results: [ ],
             boards: {
                 user: createBoard(grid_user, count_squares),
                 opponent: createBoard(grid_opponent, count_squares)
             },
             current_player: 0,
+            max_score: 0,
             players: []
         };
     }
@@ -384,7 +390,7 @@
         if(event!=="game") return false;
         if(type==="round-start") return false;
         const game= _private.get(this);
-        let { current_player_id, players= [] }= game;
+        let { current_player_id, players= [], results }= game;
         let state= "start";
         switch (type){
             case "start": return false;
@@ -393,17 +399,39 @@
                 current_player_id= game.players.findIndex(({ name })=> name===target.getAttribute("player"));
                 Object.assign(game.players[current_player_id], { loss });
                 state= game.players.filter(({ loss })=> loss===0).length===2 ? "game" : "ready";
+                if(state!=="game") break;
+    
+                results= players.map(()=> game.types_ships.map(s=> s.length));
                 break;
             case "fire":
                 state= "game";
-                dispatchGameEvent(this.shadowRoot, { type: "round-end", current_player_id, loss, target_id: target });
+                const main_event_data= { type: "round-end", current_player_id };
+                if(!loss){
+                    dispatchGameEvent(this.shadowRoot, main_event_data);
+                    break;
+                }
+    
+                const opponent_player_id= current_player_id ? 0 : 1;
+                results[opponent_player_id][game.types_ships.findIndex(s=> s.name===loss)]-= 1;
+                players[opponent_player_id].loss+= 1;
+                if(results[opponent_player_id].filter(Boolean).length){
+                    dispatchGameEvent(this.shadowRoot, Object.assign(main_event_data, { result: loss, results }));
+                    break;
+                }
+                
+                state= "end";
+                dispatchGameEvent(this.shadowRoot, { type: "end", winner: current_player_id });
                 break;
             default :
         }
         current_player_id= current_player_id ? 0 : 1;
-        updateGame(game, { state, current_player_id, players });
+        updateGame(game, { state, current_player_id, players, results });
         this.updateMessages(game);
-        if(state==="game") this.nextRound();
+        if(state==="game") return this.nextRound();
+        if(state!=="end") return false;
+    
+        players.forEach(({ player })=>
+            ( this.shadowRoot.querySelector(".grid-"+player).onclick= null ));
     };
     HTMLBattleShipsElement.prototype.log= function(){
         console.log(_private.get(this)); /* jshint devel: true *///gulp.keep.line
@@ -465,6 +493,7 @@
         this.shadowRoot.querySelector(".grid-display").appendChild(ship_el);
     
         const game= _private.get(this);
+        game.max_score+= length;
         game.types_ships.push(createShip(name, length, game.width));
     };
 
@@ -475,9 +504,11 @@
             createElement("style", { innerHTML })
         );
     };
+    /** @param {game} def */
     HTMLBattleShipsElement.prototype.updateMessages= function({ state, players, current_player_id }){
         const { [current_player_id]: current_player }= players;
         let message= "";
+        let title= current_player.name+" Go:";
         switch (state){
             case "ready":
                 message= `Prepare your fleet`;
@@ -485,9 +516,13 @@
             case "game":
                 message= `Fire to your opponent!`;
                 break;
-            default :
+            case "end":
+                const opponent_player= players[current_player_id?0:1];
+                message= `(${current_player.name}) ${opponent_player.loss}:${current_player.loss} (${opponent_player.name})`;
+                title= "Final score:";
+                break;
         }
-        this.shadowRoot.getElementById("whose-go").textContent= current_player.name+" Go:";
+        this.shadowRoot.getElementById("whose-go").textContent= title;
         this.shadowRoot.getElementById("info").textContent= message;
     };
     window.customElements.define("g-battleships", HTMLBattleShipsElement);

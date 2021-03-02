@@ -1,3 +1,4 @@
+/* jshint maxcomplexity: 15 */
 /* parent *//* global HTMLBattleShipsElement, _private */
 gulp_place("../../game/updateGame.sub.js", "file_once");/* global updateGame */
 gulp_place("../../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
@@ -11,7 +12,7 @@ HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, de
     if(event!=="game") return false;
     if(type==="round-start") return false;
     const game= _private.get(this);
-    let { current_player_id, players= [] }= game;
+    let { current_player_id, players= [], results }= game;
     let state= "start";
     switch (type){
         case "start": return false;
@@ -20,15 +21,37 @@ HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, de
             current_player_id= game.players.findIndex(({ name })=> name===target.getAttribute("player"));
             Object.assign(game.players[current_player_id], { loss });
             state= game.players.filter(({ loss })=> loss===0).length===2 ? "game" : "ready";
+            if(state!=="game") break;
+
+            results= players.map(()=> game.types_ships.map(s=> s.length));
             break;
         case "fire":
             state= "game";
-            dispatchGameEvent(this.shadowRoot, { type: "round-end", current_player_id, loss, target_id: target });
+            const main_event_data= { type: "round-end", current_player_id };
+            if(!loss){
+                dispatchGameEvent(this.shadowRoot, main_event_data);
+                break;
+            }
+
+            const opponent_player_id= current_player_id ? 0 : 1;
+            results[opponent_player_id][game.types_ships.findIndex(s=> s.name===loss)]-= 1;
+            players[opponent_player_id].loss+= 1;
+            if(results[opponent_player_id].filter(Boolean).length){
+                dispatchGameEvent(this.shadowRoot, Object.assign(main_event_data, { result: loss, results }));
+                break;
+            }
+            
+            state= "end";
+            dispatchGameEvent(this.shadowRoot, { type: "end", winner: current_player_id });
             break;
         default :
     }
     current_player_id= current_player_id ? 0 : 1;
-    updateGame(game, { state, current_player_id, players });
+    updateGame(game, { state, current_player_id, players, results });
     this.updateMessages(game);
-    if(state==="game") this.nextRound();
+    if(state==="game") return this.nextRound();
+    if(state!=="end") return false;
+
+    players.forEach(({ player })=>
+        ( this.shadowRoot.querySelector(".grid-"+player).onclick= null ));
 };
