@@ -6,5 +6,5 @@ Based on [tutorial of Ania Kubów](#tutorial), initial version with some refacto
 
 ## Tutorial
 - video [BATTLESHIPS in JavaScript - YouTube](https://youtu.be/U64vIhh0TyM)
-- (original source code)[https://github.com/kubowania/battleships] (at the begining I haven’t indea about it).
+- [(original source code)](https://github.com/kubowania/battleships) (at the begining I haven’t indea about it).
 - Ania: [Code with Ania Kubów - YouTube Channel](https://www.youtube.com/channel/UC5DNytAJ6_FISueUfzZCVsw) and [kubowania (Ania Kubow) \| GitHub](https://github.com/kubowania)
