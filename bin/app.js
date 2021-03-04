@@ -2,6 +2,15 @@
 (function BattleShipsModule(){
     const { floor, abs, random }= Math;
     const randomIntegerTill= max=> floor(random()*max);
+    /**
+     * @param {number} n_coordinate 
+     * @param {number} width 
+     * @returns {0|1} Laying in right border area (0 ⇔ nth coodinate is in right border)
+     */
+    function isNotInRightBorder(n_coordinate, width){
+        return (n_coordinate+1)%width ? 1 : 0;
+    }
+
 
     /**
      * @typedef player
@@ -33,13 +42,12 @@
         const l= coordinates.length-1;
         let m;
         //#1: Math → converting coordinates into array of 1 or zeroes
-        //  ⇒ 0 ⇔ nth coodinate is in right border
         //  ⇒ so allowed combinations: all 1, all 0 or 1 with last item 0 (ship ends on right border)
         return coordinates.some((i, j)=> {
-            if(!j) m= (i+1)%width ? 1 : 0;//#1
+            if(!j) m= isNotInRightBorder(i, width);//#1
             if(i<0||i>count_squares-1) return true;//easy ;-)
             if(!j) return false;
-            return ( (i+1)%width ? 1 : ( j===l ? m : 0 ) )!==m;//#1
+            return ( isNotInRightBorder(i, width) || ( j===l ? m : 0 ) )!==m;//#1
         });
     }
     /**
@@ -188,7 +196,7 @@
             
             const next= [ width, -width, 1, -1 ].sort(()=> Math.random() - 0.5).map(v=> v+prev_success[0].id).find(v=> {
                 if(prev_tries.indexOf(v)!==-1 || v<0||v>count_squares-1) return false; //easy
-                if(inRightBorder(v, width)!==inRightBorder(prev_success[0].id, width)) return false;
+                if(isNotInRightBorder(v, width)!==isNotInRightBorder(prev_success[0].id, width)) return false;
                 return true;
             });
             prev_success.push(prev_success.shift());
@@ -208,8 +216,6 @@
         }
         constructor(){ super(); }
     });
-    
-    function inRightBorder(n_coordinate, width){ return (n_coordinate+1)%width > 0 ? 0 : 1; }
     
     /**
      * @param {number} max 
