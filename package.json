@@ -1,0 +1,90 @@
+{
+    "name": "battleships-ania-kubow",
+    "version": "2.0.0",
+    "description": "Battleships in JS based on tutorial of Ania Kubów (with some refactoring)",
+    "main": "gulpfile.js",
+    "bin": {
+        "battleships-ania-kubow": "app.js"
+    },
+    "sequence": [
+        "javascript"
+    ],
+    "app_keys_map": [
+        [
+            "name",
+            "fullName"
+        ],
+        [
+            "version"
+        ],
+        [
+            "homepage"
+        ],
+        [
+            "directories"
+        ],
+        [
+            "sequence"
+        ]
+    ],
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "check": "node ./jaaJBT.js check && npm outdated",
+        "update": "node ./jaaJBT.js update && npm install",
+        "jshint": "node ./node_modules/jshint/bin/jshint --verbose",
+        "jshint_full": "node ./node_modules/jshint/bin/jshint --verbose --show-non-errors",
+        "gulp": "node ./node_modules/gulp/bin/gulp.js"
+    },
+    "directories": {
+        "gulp": "gulp/",
+        "src": "src/",
+        "bin": "bin/"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/jaandrle/BattleShips-Ania-Kubow.git"
+    },
+    "keywords": [
+        "javascript",
+        "battleships"
+    ],
+    "author": "Jan Andrle <andrle.jan@centrum.cz>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/jaandrle/BattleShips-Ania-Kubow/issues"
+    },
+    "homepage": "https://github.com/jaandrle/BattleShips-Ania-Kubow#readme",
+    "devDependencies": {
+        "gulp": "^4.0.2",
+        "gulp-place": "^1.8.1",
+        "jshint": "^2.12.0"
+    },
+    "jaaJBT": {
+        "config": {
+            "gulp_path": "gulp/",
+            "gulp_tasks": "gulp/tasks/"
+        },
+        "scripts": {
+            "gulpfile": "~1.1.4",
+            "gulp_cleanJSHINT": "~0.1.3",
+            "gulp_task_javascript_lib": "~0.1.5",
+            "gulp_task_default": "~1.0.1"
+        },
+        "resourses": [
+            "https://raw.githubusercontent.com/jaandrle/jaaJBT/master/"
+        ],
+        "rename": {}
+    },
+    "jshintConfig": {
+        "esversion": 6,
+        "browser": "true",
+        "undef": "true",
+        "latedef": "true",
+        "maxparams": 3,
+        "maxdepth": 2,
+        "maxcomplexity": 10,
+        "globals": {
+            "gulp_place": false
+        }
+    }
+}
