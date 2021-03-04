@@ -8,7 +8,7 @@ gulp_place("../../GameEventData.type.sub.js", "file_once");
  * @fires game
  * @listens game
  * */
-HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, detail: { type, loss } }){
+HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, detail: { type, loss, square } }){
     if(event!=="game") return false;
     if(type==="round-start") return false;
     const game= _private.get(this);
@@ -27,17 +27,20 @@ HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, de
             break;
         case "fire":
             state= "game";
-            const main_event_data= { type: "round-end", current_player_id };
+            const main_event_data= { type: "round-end", current_player_id, square_id: square };
             if(!loss){
                 dispatchGameEvent(this.shadowRoot, main_event_data);
                 break;
             }
 
             const opponent_player_id= current_player_id ? 0 : 1;
-            results[opponent_player_id][game.types_ships.findIndex(s=> s.name===loss)]-= 1;
+            const ship_id= game.types_ships.findIndex(s=> s.name===loss);
+            results[opponent_player_id][ship_id]-= 1;
             players[opponent_player_id].loss+= 1;
             if(results[opponent_player_id].filter(Boolean).length){
-                dispatchGameEvent(this.shadowRoot, Object.assign(main_event_data, { result: loss, results }));
+                dispatchGameEvent(this.shadowRoot, Object.assign(main_event_data, {
+                    ship_id, remains: results[opponent_player_id][ship_id]
+                }));
                 break;
             }
             

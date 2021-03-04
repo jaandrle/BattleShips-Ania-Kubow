@@ -11,7 +11,7 @@ class BoardInterface extends HTMLElement{
      * @returns {-1|0|1} Unknown|no|yes
      * */
     _isCurrentPlayer(player_id_candidate){
-        return typeof player_id_candidate==="undefined" ? -1 : parseInt(this._player_id===player_id_candidate);
+        return typeof player_id_candidate==="undefined" ? -1 : Number(this._player_id===player_id_candidate);
     }
     constructor(){ super(); }
 }

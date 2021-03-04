@@ -7,6 +7,7 @@
  * @type {object}
  * @property {"fire"} type
  * @property {boolean} loss
+ * @property {number} square Fire target
  */
 /**
  * @typedef GED_game
