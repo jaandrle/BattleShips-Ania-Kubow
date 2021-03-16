@@ -3,7 +3,7 @@ gulp_place("../../game/updateGame.sub.js", "file_once");/* global updateGame */
 gulp_place("../../dispatchGameEvent.sub.js", "file_once");/* global dispatchGameEvent */
 gulp_place("../../GameEventData.type.sub.js", "file_once");
 /**
- * Deleguje na metody {@link HTMLBattleShipsElement._ongamefire} a {@link HTMLBattleShipsElement._ongameready}
+ * Delegate to methods {@link HTMLBattleShipsElement._ongamefire} and {@link HTMLBattleShipsElement._ongameready}.
  * @param {GameEvent} def
  * @fires game
  * @listens game
@@ -12,7 +12,7 @@ HTMLBattleShipsElement.prototype.handleEvent= function({ type: event, target, de
     if(event!=="game"||type==="round-start"||type==="start") return false;
     const game= _private.get(this);
     /**
-     * Změněné klíče k {@link game}
+     * Only updated keys for {@link game}
      * @typedef game_update
      * @type {game|{}&{ current_player_id, state }}
      */
