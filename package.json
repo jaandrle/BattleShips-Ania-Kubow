@@ -1,6 +1,6 @@
 {
     "name": "battleships-ania-kubow",
-    "version": "2.0.0",
+    "version": "2.0.1",
     "description": "Battleships in JS based on tutorial of Ania Kubów (with some refactoring)",
     "main": "gulpfile.js",
     "bin": {

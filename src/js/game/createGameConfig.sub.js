@@ -17,7 +17,7 @@ function createGameConfig({ width, grid_user, grid_opponent }){
             user: createBoard(grid_user, count_squares),
             opponent: createBoard(grid_opponent, count_squares)
         },
-        current_player: 0,
+        current_player_id: 0,
         max_score: 0,
         players: []
     };
